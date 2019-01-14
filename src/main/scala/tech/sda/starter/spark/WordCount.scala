@@ -1,12 +1,15 @@
 package tech.sda.starter.spark
 
+import org.apache.log4j.{ Level, Logger }
 import org.apache.spark.sql._
 
 object WordCount extends App {
 
+  Logger.getRootLogger.setLevel(Level.WARN)
+
   val spark = SparkSession.builder
     .appName("WordCount Example. Submited from Docker!!!")
-    .master("local[*]")
+    // .master("local[*]")
     .getOrCreate()
 
   val input = args.length match {
@@ -17,15 +20,14 @@ object WordCount extends App {
       "Or to take arms against a sea of troubles,"))
   }
   val words = input.flatMap(line => line.split(" "))
+  val wc = words.map(word => (word, 1)).reduceByKey { case (x, y) => x + y }
 
   args.length match {
     case x: Int if x > 2 => {
-      val counts = words.map(word => (word, 1)).reduceByKey { case (x, y) => x + y }
-      counts.saveAsTextFile(args(2))
+      wc.saveAsTextFile(args(2))
     }
     case _ => {
-      val wc = words.countByValue()
-      println(wc.mkString(","))
+      println(wc.collect.mkString(", "))
     }
   }
 
